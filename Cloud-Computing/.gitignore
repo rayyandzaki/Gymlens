@@ -1,0 +1,8 @@
+# Binaries
+/vendor/
+
+# Account credentials
+/scripts
+
+# Environment variables
+.env

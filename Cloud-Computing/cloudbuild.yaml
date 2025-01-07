@@ -1,0 +1,58 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _SERVICE_NAME: go-fiber-api
+  _REGION: asia-southeast2
+  _REPO_NAME: go-fiber
+  _IMAGE_NAME: go-fiber-image
+  _BRANCH_NAME: ${BRANCH_NAME}
+  _SERVICE_ACCOUNT: github-actions-deployer@gym-lens.iam.gserviceaccount.com
+
+steps:
+  - name: 'gcr.io/cloud-builders/go'
+    env:
+      - 'GO111MODULE=on'
+      - 'GOPATH=/workspace'
+    args: ['mod', 'tidy']
+    dir: '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-t',
+        'asia-southeast2-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:$SHORT_SHA',
+        '-f',
+        'Dockerfile', 
+        '.'
+      ]
+    dir: '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'push',
+        'asia-southeast2-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:$SHORT_SHA'
+      ]
+    dir: '.'
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "$_BRANCH_NAME" = "main" ]; then
+          gcloud run deploy $_SERVICE_NAME \
+            --image asia-southeast2-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:$SHORT_SHA \
+            --region $_REGION \
+            --platform managed \
+            --allow-unauthenticated \
+            --service-account $_SERVICE_ACCOUNT \
+            --set-secrets FIREBASE_API_KEY=projects/$PROJECT_ID/secrets/FIREBASE_API_KEY:latest,GOOGLE_APPLICATION_CREDENTIALS=projects/$PROJECT_ID/secrets/GOOGLE_APPLICATION_CREDENTIALS:latest,PORT=projects/$PROJECT_ID/secrets/PORT:latest,
+        else
+          echo "Not deploying because branch is not main."
+        fi
+
+images:
+  - 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:$SHORT_SHA'
