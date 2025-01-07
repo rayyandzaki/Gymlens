@@ -176,7 +176,7 @@ We welcome contributions! To contribute to the project, please follow these step
 
 ## 📖 License
 
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for more details.
+This project is licensed under the **MIT License**. See the [LICENSE](https://github.com/rayyandzaki/Gymlens/blob/main/LICENSE) file for more details.
 
 ---
 
